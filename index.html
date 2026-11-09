@@ -105,7 +105,7 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
 <body>
 <header>
   <h1>Strekklapp-kalkulator</h1>
-  <p>Gjør om en kvartbro-avlesning til tøyning (µε) og spenning (MPa). Innstillingene lagres i nettleseren din.</p>
+  <p>Gjør om en kvartbro-avlesning til tøyning (µε) og spenning (MPa). Innstillingene lagres i nettleseren din. <button type="button" class="sec" id="reset" style="padding:2px 10px;font-size:.85rem">Tilbakestill til labverdier</button></p>
 </header>
 
 <main>
@@ -117,13 +117,13 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <div class="row">
       <div class="field">
         <label for="gf">Gauge factor (k / GF)</label>
-        <input type="text" inputmode="decimal" id="gf" value="2,00">
-        <div class="hint">Står på pakken, f.eks. 2,08 ± 1 %</div>
+        <input type="text" inputmode="decimal" id="gf" value="2,08">
+        <div class="hint">Står på pakken til strekklappen</div>
       </div>
       <div class="field">
         <label for="rg">Nominell motstand</label>
         <div class="unit"><input type="text" inputmode="decimal" id="rg" value="120"><span>Ω</span></div>
-        <div class="hint">Vanlig: 120, 350 eller 1000 Ω</div>
+        <div class="hint">Labben: 118 Ω-motstander i broen. Brukes bare til ledningskorreksjon.</div>
       </div>
     </div>
 
@@ -164,15 +164,15 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <div class="field">
       <label for="mode">Hva viser instrumentet?</label>
       <select id="mode">
+        <option value="mv">Utgangsspenning fra broen i mV (JMI Consept)</option>
         <option value="ue">Tøyning i µε (strain-indikator)</option>
         <option value="mvv">Brosignal i mV/V</option>
-        <option value="mv">Utgangsspenning fra broen i mV</option>
         <option value="v">Forsterket spenning i V (forsterker / datalogger)</option>
       </select>
     </div>
     <div class="field" data-mode="ue">
       <label for="gfInd">Gauge factor stilt inn på indikatoren</label>
-      <input type="text" inputmode="decimal" id="gfInd" value="2,00">
+      <input type="text" inputmode="decimal" id="gfInd" value="2,08">
       <div class="hint">Er den lik strekklappens GF, blir ingen GF-korreksjon gjort.</div>
     </div>
     <div class="field" data-mode="mv v">
@@ -187,8 +187,8 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <h3>Korreksjoner</h3>
     <label class="check"><input type="checkbox" id="nonlin" checked>
       <span>Korriger for kvartbroens ulinearitet<br><span class="hint">Slå av hvis indikatoren allerede korrigerer for den. Utgjør ca. 0,1 % per 1000 µε.</span></span></label>
-    <label class="check"><input type="checkbox" id="invert">
-      <span>Snu fortegn<br><span class="hint">Bruk dette hvis strekk vises som negativt med din kobling.</span></span></label>
+    <label class="check"><input type="checkbox" id="invert" checked>
+      <span>Snu fortegn<br><span class="hint">Bruk dette når strekk gir fallende/negativ avlesning. På labben falt V₀ fra 3,2 til −0,3 mV under last.</span></span></label>
   </section>
 
   <!-- MATERIALE -->
@@ -197,10 +197,10 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <div class="field">
       <label for="mat">Materiale</label>
       <select id="mat">
+        <option value="70|250">Aluminium 6xxx-T6 (labskinnen)</option>
         <option value="210|355">Konstruksjonsstål (S355)</option>
         <option value="210|235">Konstruksjonsstål (S235)</option>
         <option value="193|210">Rustfritt stål (316)</option>
-        <option value="70|250">Aluminium (6082-T6)</option>
         <option value="100|200">Messing</option>
         <option value="117|70">Kobber</option>
         <option value="114|880">Titan (Ti-6Al-4V)</option>
@@ -210,11 +210,11 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <div class="row">
       <div class="field">
         <label for="E">E-modul</label>
-        <div class="unit"><input type="text" inputmode="decimal" id="E" value="210"><span>GPa</span></div>
+        <div class="unit"><input type="text" inputmode="decimal" id="E" value="70"><span>GPa</span></div>
       </div>
       <div class="field">
         <label for="fy">Flytegrense (valgfri)</label>
-        <div class="unit"><input type="text" inputmode="decimal" id="fy" value="355"><span>MPa</span></div>
+        <div class="unit"><input type="text" inputmode="decimal" id="fy" value="250"><span>MPa</span></div>
       </div>
     </div>
     <div class="hint">Spenningen regnes som enakset: σ = E · ε. Den gjelder bare når strekklappen står langs hovedspenningsretningen.</div>
@@ -226,11 +226,11 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <div class="row">
       <div class="field">
         <label for="zero">Nullavlesning (ubelastet)</label>
-        <div class="unit"><input type="text" inputmode="decimal" id="zero" value="0"><span class="u-read">µε</span></div>
+        <div class="unit"><input type="text" inputmode="decimal" id="zero" value="3,2"><span class="u-read">mV</span></div>
       </div>
       <div class="field">
         <label for="reading">Avlesning (belastet)</label>
-        <div class="unit"><input type="text" inputmode="decimal" id="reading" value="500"><span class="u-read">µε</span></div>
+        <div class="unit"><input type="text" inputmode="decimal" id="reading" value="-0,3"><span class="u-read">mV</span></div>
       </div>
     </div>
     <div class="result">
@@ -245,11 +245,22 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
   <!-- SERIE -->
   <section class="card wide">
     <h2>5. Flere målinger</h2>
-    <p class="hint" style="margin-top:-6px">Lim inn én måling per linje. Du kan sette en merkelapp foran verdien, skilt med tabulator eller semikolon (f.eks. <code>Last 2 kN; 412</code>). Nullavlesningen fra punkt 4 trekkes fra alle verdiene.</p>
-    <textarea id="series" spellcheck="false">0 kN; 0
-1 kN; 205
-2 kN; 412
-3 kN; 618</textarea>
+    <p class="hint" style="margin-top:-6px">Lim inn én måling per linje i formen <code>merkelapp; avlesning; referanse</code>. Skill feltene med semikolon eller tabulator. Merkelappen og referansen kan utelates. Referansen er en spenning i MPa du vil sammenligne mot, for eksempel en analytisk bøyespenning, og gir en kolonne for avvik. Nullavlesningen fra punkt 4 trekkes fra alle verdiene.</p>
+    <textarea id="series" spellcheck="false">10 kg; -0,3; 94,5
+15 kg; -2,1; 141,8
+20 kg; -4,0; 189,1
+22,5 kg; -5,0; 212,7
+25 kg; -6,0; 236,4
+30 kg; -8,0; 283,6
+Kontakt planke; -9,0; 356,3
+Etter 10 kg (avlastet); 3,2
+Etter 20 kg (avlastet); 3,1
+Etter 22,5 kg (avlastet); 3,0
+Etter 25 kg (avlastet); 2,9
+Etter 30 kg (avlastet); 2,6
+Etter kontakt planke (avlastet); 2,3
+Maks deformert (avlastet); -15,6</textarea>
+    <p class="hint">Eksempeldataene er fra «Rapport samling 1 Modul 3», figur 11: aluminiumsskinne 39,9 × 3,95 mm med 400 mm spenn og last midt på. Referansen er σ = F·L/4/W, der W = 103,76 mm³. Kontakt planke bruker rapportens 356,3 MPa. Avlastede rader gir permanent tøyning.</p>
     <div class="btns">
       <button type="button" id="csv">Last ned CSV</button>
       <button type="button" class="sec" id="copy">Kopier tabell</button>
@@ -263,7 +274,7 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     <p class="hint" style="margin-top:-6px">Hvilket signal gir en gitt spenning? Nyttig når du skal velge måleområde.</p>
     <div class="field">
       <label for="revSig">Spenning</label>
-      <div class="unit"><input type="text" inputmode="decimal" id="revSig" value="100"><span>MPa</span></div>
+      <div class="unit"><input type="text" inputmode="decimal" id="revSig" value="250"><span>MPa</span></div>
     </div>
     <div class="tablewrap"><table id="revTbl"></table></div>
   </section>
@@ -304,7 +315,7 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
 (function () {
   const $ = id => document.getElementById(id);
   const ids = ['gf','rg','wiring','rl','len','area','mode','gfInd','vex','gain','nonlin','invert','mat','E','fy','zero','reading','series','revSig'];
-  const KEY = 'strekklapp-v1';
+  const KEY = 'strekklapp-v2';
 
   const num = s => {
     if (typeof s !== 'string') return NaN;
@@ -349,10 +360,10 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
 
   // returnerer { eps (µε), sig (MPa), Vr }
   function convert(x, zero, s) {
-    const Vr = vr(x, s) - vr(zero, s);
+    let Vr = vr(x, s) - vr(zero, s);
+    if (s.invert) Vr = -Vr; // fortegn snus før ulinearitetskorreksjonen
     let eps = s.nonlin ? 4 * Vr / (s.gf * (1 - 2 * Vr)) : 4 * Vr / s.gf;
     eps *= leadFactor(s);
-    if (s.invert) eps = -eps;
     const ue = eps * 1e6;
     return { Vr, ue, sig: s.E * 1e3 * eps };
   }
@@ -378,9 +389,8 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
   function parseSeries(text) {
     return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((l, i) => {
       const parts = l.split(/\t|;/).map(p => p.trim());
-      const val = num(parts[parts.length - 1]);
-      const label = parts.length > 1 ? parts.slice(0, -1).join(' ') : String(i + 1);
-      return { label, val };
+      if (parts.length === 1) return { label: String(i + 1), val: num(parts[0]), ref: NaN };
+      return { label: parts[0], val: num(parts[1]), ref: parts.length > 2 ? num(parts[2]) : NaN };
     });
   }
 
@@ -421,11 +431,14 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     const rows = parseSeries($('series').value).map(p => ({ ...p, ...convert(p.val, zero, s) }));
     lastRows = rows;
     const u = units[s.mode];
-    let h = `<thead><tr><th>Merkelapp</th><th>Avlesning (${u})</th><th>V<sub>r</sub> (mV/V)</th><th>Tøyning (µε)</th><th>Spenning (MPa)</th>${s.fy > 0 ? '<th>Utnyttelse</th>' : ''}</tr></thead><tbody>`;
+    const hasRef = rows.some(r => Number.isFinite(r.ref));
+    let h = `<thead><tr><th>Merkelapp</th><th>Avlesning (${u})</th><th>V<sub>r</sub> (mV/V)</th><th>Tøyning (µε)</th><th>Tøyning (%)</th><th>Spenning (MPa)</th>${hasRef ? '<th>Referanse (MPa)</th><th>Avvik</th>' : ''}${s.fy > 0 ? '<th>Utnyttelse</th>' : ''}</tr></thead><tbody>`;
     for (const row of rows) {
       const ok = Number.isFinite(row.val);
+      const rf = Number.isFinite(row.ref);
       h += `<tr><td>${esc(row.label)}</td><td>${ok ? fmtSig(row.val, 6) : '<span style="color:var(--bad)">ugyldig</span>'}</td>
-        <td>${ok ? fmtSig(row.Vr * 1000, 4) : ''}</td><td>${ok ? fmt(row.ue, 1) : ''}</td><td>${ok ? fmt(row.sig, 1) : ''}</td>
+        <td>${ok ? fmtSig(row.Vr * 1000, 4) : ''}</td><td>${ok ? fmt(row.ue, 1) : ''}</td><td>${ok ? fmt(row.ue / 1e4, 3) : ''}</td><td>${ok ? fmt(row.sig, 1) : ''}</td>
+        ${hasRef ? `<td>${rf ? fmt(row.ref, 1) : ''}</td><td>${ok && rf && row.ref !== 0 ? (row.sig >= row.ref ? '+' : '') + fmt((row.sig - row.ref) / row.ref * 100, 1) + ' %' : ''}</td>` : ''}
         ${s.fy > 0 ? `<td>${ok ? fmt(Math.abs(row.sig) / s.fy * 100, 0) + ' %' : ''}</td>` : ''}</tr>`;
     }
     $('tbl').innerHTML = h + '</tbody>';
@@ -433,11 +446,10 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
     // omvendt
     const sig = num($('revSig').value);
     if (Number.isFinite(sig)) {
-      let eps = sig / (s.E * 1e3);
-      if (s.invert) eps = -eps;
-      const epsMeas = eps / lf;
-      const k = s.gf * epsMeas;
-      const Vr = s.nonlin ? k / (4 + 2 * k) : k / 4;
+      const eps = sig / (s.E * 1e3);
+      const k = s.gf * eps / lf;
+      let Vr = s.nonlin ? k / (4 + 2 * k) : k / 4;
+      if (s.invert) Vr = -Vr;
       const rr = [
         ['Tøyning', fmt(sig / (s.E * 1e3) * 1e6, 1) + ' µε'],
         ['Brosignal', fmtSig(Vr * 1000, 4) + ' mV/V'],
@@ -456,10 +468,11 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
   function tableText(sep, decComma) {
     const s = settings();
     const f = (x, d) => Number.isFinite(x) ? (decComma ? x.toFixed(d).replace('.', ',') : x.toFixed(d)) : '';
-    const head = ['Merkelapp', `Avlesning (${units[s.mode]})`, 'Vr (mV/V)', 'Toyning (ue)', 'Spenning (MPa)'];
+    const head = ['Merkelapp', `Avlesning (${units[s.mode]})`, 'Vr (mV/V)', 'Toyning (ue)', 'Spenning (MPa)', 'Referanse (MPa)', 'Avvik (%)'];
     const lines = [head.join(sep)];
     for (const r of lastRows) {
-      lines.push([r.label.includes(sep) ? `"${r.label}"` : r.label, f(r.val, 6), f(r.Vr * 1000, 6), f(r.ue, 2), f(r.sig, 3)].join(sep));
+      const dev = Number.isFinite(r.ref) && r.ref !== 0 ? (r.sig - r.ref) / r.ref * 100 : NaN;
+      lines.push([r.label.includes(sep) ? `"${r.label}"` : r.label, f(r.val, 6), f(r.Vr * 1000,6), f(r.ue, 2), f(r.sig, 3), f(r.ref, 1), f(dev, 2)].join(sep));
     }
     return lines.join('\r\n');
   }
@@ -511,6 +524,10 @@ footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-botto
       $('copy').textContent = 'Kopiert!';
       setTimeout(() => $('copy').textContent = 'Kopier tabell', 1500);
     } catch (e) { alert('Kunne ikke kopiere til utklippstavlen.'); }
+  });
+  $('reset').addEventListener('click', () => {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    location.reload();
   });
   document.addEventListener('input', update);
   document.addEventListener('change', update);
