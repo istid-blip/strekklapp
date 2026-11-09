@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strekklapp-kalkulator</title>
+<meta name="description" content="Omregning fra kvartbro-signal / indikatoravlesning til tøyning og spenning.">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1b1f24;
+  --muted: #5d6673;
+  --border: #d9dee5;
+  --accent: #0b6bcb;
+  --accent-soft: #e6f0fb;
+  --ok: #1a7f37;
+  --warn: #b35900;
+  --bad: #c62828;
+  --input: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --card: #1a1f25;
+    --text: #e6e9ed;
+    --muted: #9aa4b0;
+    --border: #2c333c;
+    --accent: #5aa9f5;
+    --accent-soft: #1b2b3d;
+    --ok: #4cc06a;
+    --warn: #f0a04b;
+    --bad: #ef6b6b;
+    --input: #12161b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+header, main, footer { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 28px; padding-bottom: 8px; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; }
+header p { margin: 0; color: var(--muted); }
+h2 { font-size: 1.05rem; margin: 0 0 12px; }
+h3 { font-size: .95rem; margin: 16px 0 8px; color: var(--muted); font-weight: 600; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.wide { grid-column: 1 / -1; }
+label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 3px; }
+.field { margin-bottom: 12px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input[type=text], select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; min-height: 140px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.unit { position: relative; }
+.unit input { padding-right: 52px; }
+.unit span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; color: var(--text); margin-bottom: 8px; }
+.check input { margin-top: 4px; }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 3px; }
+.hidden { display: none !important; }
+.result { background: var(--accent-soft); border-radius: 10px; padding: 16px; margin-top: 4px; }
+.big { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.big div { min-width: 0; }
+.big .v { font-size: 1.6rem; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.big .l { font-size: .8rem; color: var(--muted); }
+.small { margin-top: 12px; font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.util { font-weight: 600; }
+.util.ok { color: var(--ok); } .util.warn { color: var(--warn); } .util.bad { color: var(--bad); }
+button {
+  font: inherit; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff;
+}
+button.sec { background: transparent; color: var(--accent); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.tablewrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: .9rem; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; }
+details { margin-top: 8px; }
+summary { cursor: pointer; color: var(--accent); }
+code, .formula { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .88rem; }
+.formula { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; white-space: nowrap; }
+svg text { fill: var(--text); font: 12px system-ui, sans-serif; }
+svg .wire { stroke: var(--muted); stroke-width: 2; fill: none; }
+svg .res { stroke: var(--text); stroke-width: 2; fill: var(--card); }
+svg .gauge { stroke: var(--accent); stroke-width: 2.5; fill: var(--accent-soft); }
+footer { color: var(--muted); font-size: .8rem; padding-top: 16px; padding-bottom: 32px; }
+@media (max-width: 420px) { .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Strekklapp-kalkulator</h1>
+  <p>Gjør om en kvartbro-avlesning til tøyning (µε) og spenning (MPa). Innstillingene lagres i nettleseren din.</p>
+</header>
+
+<main>
+<div class="grid">
+
+  <!-- STREKKLAPP -->
+  <section class="card">
+    <h2>1. Strekklapp</h2>
+    <div class="row">
+      <div class="field">
+        <label for="gf">Gauge factor (k / GF)</label>
+        <input type="text" inputmode="decimal" id="gf" value="2,00">
+        <div class="hint">Står på pakken, f.eks. 2,08 ± 1 %</div>
+      </div>
+      <div class="field">
+        <label for="rg">Nominell motstand</label>
+        <div class="unit"><input type="text" inputmode="decimal" id="rg" value="120"><span>Ω</span></div>
+        <div class="hint">Vanlig: 120, 350 eller 1000 Ω</div>
+      </div>
+    </div>
+
+    <h3>Tilledninger (kvartbro)</h3>
+    <div class="field">
+      <label for="wiring">Kobling</label>
+      <select id="wiring">
+        <option value="none">Ingen korreksjon (korte ledninger / indikator kompenserer)</option>
+        <option value="2">2-leder</option>
+        <option value="3">3-leder</option>
+      </select>
+    </div>
+    <div id="leadBox" class="hidden">
+      <div class="field">
+        <label for="rl">Motstand per leder</label>
+        <div class="unit"><input type="text" inputmode="decimal" id="rl" value="0"><span>Ω</span></div>
+      </div>
+      <details>
+        <summary>Beregn ledermotstand fra lengde og tverrsnitt</summary>
+        <div class="row" style="margin-top:8px">
+          <div class="field">
+            <label for="len">Lengde (én vei)</label>
+            <div class="unit"><input type="text" inputmode="decimal" id="len" value="5"><span>m</span></div>
+          </div>
+          <div class="field">
+            <label for="area">Tverrsnitt</label>
+            <div class="unit"><input type="text" inputmode="decimal" id="area" value="0,25"><span>mm²</span></div>
+          </div>
+        </div>
+        <button class="sec" id="calcRl" type="button">Bruk kobber (0,0172 Ω·mm²/m)</button>
+      </details>
+    </div>
+  </section>
+
+  <!-- INDIKATOR -->
+  <section class="card">
+    <h2>2. Indikator / måleforsterker</h2>
+    <div class="field">
+      <label for="mode">Hva viser instrumentet?</label>
+      <select id="mode">
+        <option value="ue">Tøyning i µε (strain-indikator)</option>
+        <option value="mvv">Brosignal i mV/V</option>
+        <option value="mv">Utgangsspenning fra broen i mV</option>
+        <option value="v">Forsterket spenning i V (forsterker / datalogger)</option>
+      </select>
+    </div>
+    <div class="field" data-mode="ue">
+      <label for="gfInd">Gauge factor stilt inn på indikatoren</label>
+      <input type="text" inputmode="decimal" id="gfInd" value="2,00">
+      <div class="hint">Er den lik strekklappens GF, blir ingen GF-korreksjon gjort.</div>
+    </div>
+    <div class="field" data-mode="mv v">
+      <label for="vex">Brospenning (eksitasjon)</label>
+      <div class="unit"><input type="text" inputmode="decimal" id="vex" value="5"><span>V</span></div>
+    </div>
+    <div class="field" data-mode="v">
+      <label for="gain">Forsterkning</label>
+      <div class="unit"><input type="text" inputmode="decimal" id="gain" value="1000"><span>×</span></div>
+    </div>
+
+    <h3>Korreksjoner</h3>
+    <label class="check"><input type="checkbox" id="nonlin" checked>
+      <span>Korriger for kvartbroens ulinearitet<br><span class="hint">Slå av hvis indikatoren allerede korrigerer for den. Utgjør ca. 0,1 % per 1000 µε.</span></span></label>
+    <label class="check"><input type="checkbox" id="invert">
+      <span>Snu fortegn<br><span class="hint">Bruk dette hvis strekk vises som negativt med din kobling.</span></span></label>
+  </section>
+
+  <!-- MATERIALE -->
+  <section class="card">
+    <h2>3. Materiale</h2>
+    <div class="field">
+      <label for="mat">Materiale</label>
+      <select id="mat">
+        <option value="210|355">Konstruksjonsstål (S355)</option>
+        <option value="210|235">Konstruksjonsstål (S235)</option>
+        <option value="193|210">Rustfritt stål (316)</option>
+        <option value="70|250">Aluminium (6082-T6)</option>
+        <option value="100|200">Messing</option>
+        <option value="117|70">Kobber</option>
+        <option value="114|880">Titan (Ti-6Al-4V)</option>
+        <option value="custom">Egendefinert</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="E">E-modul</label>
+        <div class="unit"><input type="text" inputmode="decimal" id="E" value="210"><span>GPa</span></div>
+      </div>
+      <div class="field">
+        <label for="fy">Flytegrense (valgfri)</label>
+        <div class="unit"><input type="text" inputmode="decimal" id="fy" value="355"><span>MPa</span></div>
+      </div>
+    </div>
+    <div class="hint">Spenningen regnes som enakset: σ = E · ε. Den gjelder bare når strekklappen står langs hovedspenningsretningen.</div>
+  </section>
+
+  <!-- ENKELTMÅLING -->
+  <section class="card">
+    <h2>4. Måling</h2>
+    <div class="row">
+      <div class="field">
+        <label for="zero">Nullavlesning (ubelastet)</label>
+        <div class="unit"><input type="text" inputmode="decimal" id="zero" value="0"><span class="u-read">µε</span></div>
+      </div>
+      <div class="field">
+        <label for="reading">Avlesning (belastet)</label>
+        <div class="unit"><input type="text" inputmode="decimal" id="reading" value="500"><span class="u-read">µε</span></div>
+      </div>
+    </div>
+    <div class="result">
+      <div class="big">
+        <div><div class="v" id="outEps">–</div><div class="l">Tøyning (µε)</div></div>
+        <div><div class="v" id="outSig">–</div><div class="l">Spenning (MPa)</div></div>
+      </div>
+      <div class="small" id="outDetail"></div>
+    </div>
+  </section>
+
+  <!-- SERIE -->
+  <section class="card wide">
+    <h2>5. Flere målinger</h2>
+    <p class="hint" style="margin-top:-6px">Lim inn én måling per linje. Du kan sette en merkelapp foran verdien, skilt med tabulator eller semikolon (f.eks. <code>Last 2 kN; 412</code>). Nullavlesningen fra punkt 4 trekkes fra alle verdiene.</p>
+    <textarea id="series" spellcheck="false">0 kN; 0
+1 kN; 205
+2 kN; 412
+3 kN; 618</textarea>
+    <div class="btns">
+      <button type="button" id="csv">Last ned CSV</button>
+      <button type="button" class="sec" id="copy">Kopier tabell</button>
+    </div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </section>
+
+  <!-- OMVENDT -->
+  <section class="card">
+    <h2>Omvendt: forventet signal</h2>
+    <p class="hint" style="margin-top:-6px">Hvilket signal gir en gitt spenning? Nyttig når du skal velge måleområde.</p>
+    <div class="field">
+      <label for="revSig">Spenning</label>
+      <div class="unit"><input type="text" inputmode="decimal" id="revSig" value="100"><span>MPa</span></div>
+    </div>
+    <div class="tablewrap"><table id="revTbl"></table></div>
+  </section>
+
+  <!-- TEORI -->
+  <section class="card">
+    <h2>Kvartbro og formler</h2>
+    <svg viewBox="0 0 300 200" width="100%" style="max-width:340px;display:block;margin:0 auto 8px" role="img" aria-label="Wheatstone kvartbro">
+      <path class="wire" d="M150 20 L60 100 L150 180 L240 100 Z"/>
+      <rect class="gauge" x="82" y="44" width="34" height="16" transform="rotate(-41 99 52)"/>
+      <rect class="res" x="184" y="44" width="34" height="16" transform="rotate(41 201 52)"/>
+      <rect class="res" x="82" y="140" width="34" height="16" transform="rotate(41 99 148)"/>
+      <rect class="res" x="184" y="140" width="34" height="16" transform="rotate(-41 201 148)"/>
+      <text x="52" y="44" text-anchor="end" style="fill:var(--accent)">R<tspan dy="3" font-size="9">G</tspan></text>
+      <text x="252" y="44">R</text><text x="52" y="168" text-anchor="end">R</text><text x="252" y="168">R</text>
+      <text x="150" y="13" text-anchor="middle">+V<tspan dy="3" font-size="9">ex</tspan></text>
+      <text x="150" y="197" text-anchor="middle">0 V</text>
+      <circle cx="60" cy="100" r="3" fill="var(--text)"/><circle cx="240" cy="100" r="3" fill="var(--text)"/>
+      <path class="wire" d="M60 100 L95 100" stroke-dasharray="3 3"/><path class="wire" d="M240 100 L205 100" stroke-dasharray="3 3"/>
+      <text x="150" y="104" text-anchor="middle">V<tspan dy="3" font-size="9">ut</tspan></text>
+    </svg>
+    <div class="formula">V<sub>r</sub> = (V<sub>ut</sub>/V<sub>ex</sub>)<sub>belastet</sub> − (V<sub>ut</sub>/V<sub>ex</sub>)<sub>null</sub></div>
+    <div class="formula">ε = 4·V<sub>r</sub> / (GF · (1 − 2·V<sub>r</sub>))</div>
+    <div class="formula">ε ≈ 4·V<sub>r</sub> / GF &nbsp;(lineær)</div>
+    <div class="formula">2-leder: ε · (1 + 2R<sub>L</sub>/R<sub>G</sub>) &nbsp; 3-leder: ε · (1 + R<sub>L</sub>/R<sub>G</sub>)</div>
+    <div class="formula">Indikator i µε: V<sub>r</sub> = GF<sub>ind</sub> · ε<sub>ind</sub> / 4</div>
+    <div class="formula">σ = E · ε</div>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  Formlene følger Vishay Tech Note TN-507 (positivt fortegn = strekk). Kontroller alltid med en kjent last eller shuntkalibrering.
+</footer>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const ids = ['gf','rg','wiring','rl','len','area','mode','gfInd','vex','gain','nonlin','invert','mat','E','fy','zero','reading','series','revSig'];
+  const KEY = 'strekklapp-v1';
+
+  const num = s => {
+    if (typeof s !== 'string') return NaN;
+    s = s.trim().replace(/\s/g, '').replace(',', '.').replace('−', '-');
+    return s === '' ? NaN : Number(s);
+  };
+  const fmt = (x, d = 1) => Number.isFinite(x)
+    ? x.toLocaleString('nb-NO', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+  const fmtSig = (x, sig = 4) => {
+    if (!Number.isFinite(x)) return '–';
+    if (x === 0) return '0';
+    const d = Math.max(0, Math.min(8, sig - 1 - Math.floor(Math.log10(Math.abs(x)))));
+    return fmt(x, d);
+  };
+
+  const units = { ue: 'µε', mvv: 'mV/V', mv: 'mV', v: 'V' };
+
+  function settings() {
+    return {
+      gf: num($('gf').value), rg: num($('rg').value),
+      wiring: $('wiring').value, rl: num($('rl').value) || 0,
+      mode: $('mode').value, gfInd: num($('gfInd').value),
+      vex: num($('vex').value), gain: num($('gain').value),
+      nonlin: $('nonlin').checked, invert: $('invert').checked,
+      E: num($('E').value), fy: num($('fy').value),
+    };
+  }
+
+  function vr(x, s) {
+    switch (s.mode) {
+      case 'ue': return s.gfInd * x * 1e-6 / 4;
+      case 'mvv': return x / 1000;
+      case 'mv': return x / 1000 / s.vex;
+      case 'v': return x / (s.gain * s.vex);
+    }
+  }
+  function leadFactor(s) {
+    if (s.wiring === '2') return 1 + 2 * s.rl / s.rg;
+    if (s.wiring === '3') return 1 + s.rl / s.rg;
+    return 1;
+  }
+
+  // returnerer { eps (µε), sig (MPa), Vr }
+  function convert(x, zero, s) {
+    const Vr = vr(x, s) - vr(zero, s);
+    let eps = s.nonlin ? 4 * Vr / (s.gf * (1 - 2 * Vr)) : 4 * Vr / s.gf;
+    eps *= leadFactor(s);
+    if (s.invert) eps = -eps;
+    const ue = eps * 1e6;
+    return { Vr, ue, sig: s.E * 1e3 * eps };
+  }
+
+  function validate(s) {
+    const errs = [];
+    if (!(s.gf > 0)) errs.push('Gauge factor må være et positivt tall.');
+    if (s.wiring !== 'none' && !(s.rg > 0)) errs.push('Nominell motstand mangler.');
+    if (s.mode === 'ue' && !(s.gfInd > 0)) errs.push('GF på indikatoren mangler.');
+    if ((s.mode === 'mv' || s.mode === 'v') && !(s.vex > 0)) errs.push('Brospenning mangler.');
+    if (s.mode === 'v' && !(s.gain > 0)) errs.push('Forsterkning mangler.');
+    if (!(s.E > 0)) errs.push('E-modul mangler.');
+    return errs;
+  }
+
+  function utilHtml(sig, fy) {
+    if (!(fy > 0) || !Number.isFinite(sig)) return '';
+    const u = Math.abs(sig) / fy * 100;
+    const cls = u < 67 ? 'ok' : u < 100 ? 'warn' : 'bad';
+    return ` · Utnyttelse av flytegrense: <span class="util ${cls}">${fmt(u, 0)} %</span>`;
+  }
+
+  function parseSeries(text) {
+    return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((l, i) => {
+      const parts = l.split(/\t|;/).map(p => p.trim());
+      const val = num(parts[parts.length - 1]);
+      const label = parts.length > 1 ? parts.slice(0, -1).join(' ') : String(i + 1);
+      return { label, val };
+    });
+  }
+
+  let lastRows = [];
+
+  function update() {
+    const s = settings();
+    // vis/skjul felter
+    document.querySelectorAll('[data-mode]').forEach(el => {
+      el.classList.toggle('hidden', !el.dataset.mode.split(' ').includes(s.mode));
+    });
+    $('leadBox').classList.toggle('hidden', s.wiring === 'none');
+    document.querySelectorAll('.u-read').forEach(el => el.textContent = units[s.mode]);
+
+    const errs = validate(s);
+    const zero = num($('zero').value) || 0;
+
+    if (errs.length) {
+      $('outEps').textContent = $('outSig').textContent = '–';
+      $('outDetail').innerHTML = errs.join('<br>');
+      $('tbl').innerHTML = ''; $('revTbl').innerHTML = '';
+      save(); return;
+    }
+
+    // enkeltmåling
+    const x = num($('reading').value);
+    const r = convert(x, zero, s);
+    $('outEps').textContent = fmt(r.ue, 1);
+    $('outSig').textContent = fmt(r.sig, 1);
+    const lf = leadFactor(s);
+    const notes = [];
+    notes.push(`V<sub>r</sub> = ${fmtSig(r.Vr * 1000, 4)} mV/V`);
+    if (s.mode === 'ue' && s.gfInd !== s.gf) notes.push(`GF-korreksjon ×${fmtSig(s.gfInd / s.gf, 5)}`);
+    if (lf !== 1) notes.push(`ledningskorreksjon ×${fmtSig(lf, 5)}`);
+    $('outDetail').innerHTML = Number.isFinite(x) ? notes.join(' · ') + utilHtml(r.sig, s.fy) : 'Skriv inn en avlesning.';
+
+    // serie
+    const rows = parseSeries($('series').value).map(p => ({ ...p, ...convert(p.val, zero, s) }));
+    lastRows = rows;
+    const u = units[s.mode];
+    let h = `<thead><tr><th>Merkelapp</th><th>Avlesning (${u})</th><th>V<sub>r</sub> (mV/V)</th><th>Tøyning (µε)</th><th>Spenning (MPa)</th>${s.fy > 0 ? '<th>Utnyttelse</th>' : ''}</tr></thead><tbody>`;
+    for (const row of rows) {
+      const ok = Number.isFinite(row.val);
+      h += `<tr><td>${esc(row.label)}</td><td>${ok ? fmtSig(row.val, 6) : '<span style="color:var(--bad)">ugyldig</span>'}</td>
+        <td>${ok ? fmtSig(row.Vr * 1000, 4) : ''}</td><td>${ok ? fmt(row.ue, 1) : ''}</td><td>${ok ? fmt(row.sig, 1) : ''}</td>
+        ${s.fy > 0 ? `<td>${ok ? fmt(Math.abs(row.sig) / s.fy * 100, 0) + ' %' : ''}</td>` : ''}</tr>`;
+    }
+    $('tbl').innerHTML = h + '</tbody>';
+
+    // omvendt
+    const sig = num($('revSig').value);
+    if (Number.isFinite(sig)) {
+      let eps = sig / (s.E * 1e3);
+      if (s.invert) eps = -eps;
+      const epsMeas = eps / lf;
+      const k = s.gf * epsMeas;
+      const Vr = s.nonlin ? k / (4 + 2 * k) : k / 4;
+      const rr = [
+        ['Tøyning', fmt(sig / (s.E * 1e3) * 1e6, 1) + ' µε'],
+        ['Brosignal', fmtSig(Vr * 1000, 4) + ' mV/V'],
+      ];
+      if (s.vex > 0) rr.push([`Broutgang ved ${fmtSig(s.vex, 3)} V`, fmtSig(Vr * s.vex * 1000, 4) + ' mV']);
+      if (s.vex > 0 && s.gain > 0) rr.push([`Forsterket (×${fmtSig(s.gain, 4)})`, fmtSig(Vr * s.vex * s.gain, 4) + ' V']);
+      if (s.gfInd > 0) rr.push([`Indikator (GF ${fmtSig(s.gfInd, 3)})`, fmt(4 * Vr / s.gfInd * 1e6, 1) + ' µε']);
+      $('revTbl').innerHTML = '<tbody>' + rr.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('') + '</tbody>';
+    } else $('revTbl').innerHTML = '';
+
+    save();
+  }
+
+  function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+  function tableText(sep, decComma) {
+    const s = settings();
+    const f = (x, d) => Number.isFinite(x) ? (decComma ? x.toFixed(d).replace('.', ',') : x.toFixed(d)) : '';
+    const head = ['Merkelapp', `Avlesning (${units[s.mode]})`, 'Vr (mV/V)', 'Toyning (ue)', 'Spenning (MPa)'];
+    const lines = [head.join(sep)];
+    for (const r of lastRows) {
+      lines.push([r.label.includes(sep) ? `"${r.label}"` : r.label, f(r.val, 6), f(r.Vr * 1000, 6), f(r.ue, 2), f(r.sig, 3)].join(sep));
+    }
+    return lines.join('\r\n');
+  }
+
+  function save() {
+    try {
+      const o = {};
+      ids.forEach(id => { const el = $(id); o[id] = el.type === 'checkbox' ? el.checked : el.value; });
+      localStorage.setItem(KEY, JSON.stringify(o));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      const o = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!o) return;
+      ids.forEach(id => {
+        if (!(id in o)) return;
+        const el = $(id);
+        if (el.type === 'checkbox') el.checked = !!o[id]; else el.value = o[id];
+      });
+    } catch (e) {}
+  }
+
+  // hendelser
+  $('mat').addEventListener('change', () => {
+    const v = $('mat').value;
+    if (v !== 'custom') {
+      const [E, fy] = v.split('|');
+      $('E').value = E; $('fy').value = fy;
+    }
+    update();
+  });
+  ['E', 'fy'].forEach(id => $(id).addEventListener('input', () => { $('mat').value = 'custom'; }));
+  $('calcRl').addEventListener('click', () => {
+    const L = num($('len').value), A = num($('area').value);
+    if (L > 0 && A > 0) { $('rl').value = (0.0172 * L / A).toFixed(3).replace('.', ','); update(); }
+  });
+  $('csv').addEventListener('click', () => {
+    const blob = new Blob(['﻿' + tableText(';', true)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'strekklapp-maalinger.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(tableText('\t', true));
+      $('copy').textContent = 'Kopiert!';
+      setTimeout(() => $('copy').textContent = 'Kopier tabell', 1500);
+    } catch (e) { alert('Kunne ikke kopiere til utklippstavlen.'); }
+  });
+  document.addEventListener('input', update);
+  document.addEventListener('change', update);
+
+  load();
+  update();
+})();
+</script>
+</body>
+</html>
